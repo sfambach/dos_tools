@@ -1,0 +1,26 @@
+name: trident_emulation
+
+on:
+  push:
+    tags: ['trident_emulation-v*']
+  pull_request:
+    paths: ['trident_emulation/**', '.github/workflows/trident_emulation.yml']
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y nasm
+      - run: make -C trident_emulation
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TRIEMU
+          path: trident_emulation/bin/TRIEMU.COM
+      - if: startsWith(github.ref, 'refs/tags/trident_emulation-v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: trident_emulation/bin/TRIEMU.COM

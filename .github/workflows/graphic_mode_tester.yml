@@ -2,7 +2,6 @@ name: graphic_mode_tester
 
 on:
   push:
-    paths: ['graphic_mode_tester/**', '.github/workflows/graphic_mode_tester.yml']
     tags: ['graphic_mode_tester-v*']
   pull_request:
     paths: ['graphic_mode_tester/**', '.github/workflows/graphic_mode_tester.yml']
