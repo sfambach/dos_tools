@@ -33,6 +33,8 @@ For `CGA` and `MDA` the tool first sets the matching VGA BIOS mode (font, palett
 | CGA 80x25 | 71 50 5A 0A 1F 06 19 1C 02 07 06 07 | 29h, colour 30h |
 | MDA 80x25 | 61 50 52 0F 19 06 19 19 02 0D 0B 0C | 29h |
 
+Card BIOS (TG Expert EVGA, C3-127, from a disassembly, unverified): at POST it reads the switch nibble (3C4h index 0Fh). If it is `1100` and 3CCh reads 67h, the card hands INT 10h over to the mainboard BIOS (`int 42h`). `TRIEMU` without arguments shows this nibble as `Switches:`.
+
 Open: whether the 8800BR in emulation mode 5 really takes over the 6845 values as 15.7 kHz / 18.4 kHz timing, and whether `EGA` changes the timing at all, is not known.
 
 Source: [vgadoc TRIDENT.TXT](https://pdos.csail.mit.edu/6.1810/2017/readings/hardware/vgadoc/TRIDENT.TXT)
