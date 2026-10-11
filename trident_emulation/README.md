@@ -1,6 +1,6 @@
 # Trident emulation switch (TRIEMU)
 
-> ⚠️ **Untested on real hardware.** Written from the register documentation only. Use at your own risk and report results.
+> ⚠️ **Untested on real hardware. Do not use `CGA`, `MDA`, `HGC` or `EGA` yet** – only the status display (`TRIEMU` without arguments) is safe. See *Findings from SVM89.EXE* below: Trident's emulation works through NMI traps that need a resident handler, which TRIEMU does not install. Without it the PC may stop with an NMI/parity error (reset fixes it).
 
 Small DOS tool that switches the emulation mode of a Trident TVGA8800/8900 graphics card. Replacement for Trident's `SVM.EXE` (folder `TVGAUTIL` on the driver disk), which is hard to find for the 8800BR. Goal: get real CGA/MDA timing out of the card's 9-pin TTL output, e.g. for testing the MCE Blaster. Runs on DOS 2.0 and later (e.g. DOS 3.31, where `MODE MONO` is not available).
 
@@ -38,6 +38,16 @@ Card BIOS (TG Expert EVGA, C3-127, from a disassembly, unverified): at POST it r
 Open: whether the 8800BR in emulation mode 5 really takes over the 6845 values as 15.7 kHz / 18.4 kHz timing, and whether `EGA` changes the timing at all, is not known.
 
 Source: [vgadoc TRIDENT.TXT](https://pdos.csail.mit.edu/6.1810/2017/readings/hardware/vgadoc/TRIDENT.TXT)
+
+## Findings from SVM89.EXE
+
+Disassembly of `SVM89.EXE` 1.21 (Trident driver disk C3.0, for the TVGA8900):
+
+- It stays resident and hooks INT 10h (old vector moved to INT 6Dh) and the NMI. It enables NMI on XT (port A0h) and AT (port 70h) and clears the parity latch (port 61h).
+- Its NMI handler reads 3C4h index 0Ch, then the trapped CGA/MDA mode register (3D8h/3B8h), and reprograms the VGA CRTC itself (e.g. 3D4h R2 = 51h or 29h, 3B4h R4 = 2Eh, R5 = 0Fh). So "emulation" is register-level compatibility for software, done by the TSR, not a switch of the output timing.
+- It writes 3C4h index 0Dh in old mode with 20h (VGA), 22h, 0Ch and 2Ch. The low three bits are 0, 2 and 4, not 3 and 5 as TRIDENT.TXT says, at least on the 8900.
+
+Consequence: setting the emulation bits alone will most likely not produce 15.7 kHz on the TTL output. On the TG Expert EVGA the more likely path is the board's own pass-through (switch nibble `1100`, see above).
 
 ## Tested
 
