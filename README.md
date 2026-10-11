@@ -1,15 +1,15 @@
 # dos_tools
 
-Sammlung kleiner DOS-Werkzeuge für IBM PC/XT/AT und Kompatible.
+A collection of small DOS tools for the IBM PC/XT/AT and compatibles.
 
-| Werkzeug | Zweck |
+| Tool | Purpose |
 |---|---|
-| [graphic_mode_tester](graphic_mode_tester/) | Schaltet alle Videomodi der Grafikkarte (MDA, CGA, EGA) durch und zeigt je ein statisches Testbild |
+| [graphic_mode_tester](graphic_mode_tester/) | Cycles through every video mode of the graphics card (MDA, CGA, EGA) and shows a static test image for each |
 
-## Lizenz
+## License
 
 [MIT](LICENSE)
 
 ## AI disclosure
 
-Teile dieses Repositorys wurden mit Unterstützung von KI (Claude, Anthropic) erstellt und vom Maintainer geprüft.
+Parts of this repository were created with the help of AI (Claude, Anthropic) and reviewed by the maintainer.

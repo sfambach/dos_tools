@@ -421,35 +421,35 @@ bars_cga2:      db 00h, 88h, 0AAh, 0FFh
 bars_ega16:     db 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
 bars_egamono:   db 0, 1, 4, 5
 
-%define F_CGA '15,7 kHz / 60 Hz'
-%define F_MDA '18,4 kHz / 50 Hz'
-%define F_ECD '21,8 kHz / 60 Hz'
+%define F_CGA '15.7 kHz / 60 Hz'
+%define F_MDA '18.4 kHz / 50 Hz'
+%define F_ECD '21.8 kHz / 60 Hz'
 
-t00:    db 'Modus 00h  Text 40x25', 0, '320x200  16 Farben, s/w', 0, F_CGA, 0
-t01:    db 'Modus 01h  Text 40x25', 0, '320x200  16 Farben', 0, F_CGA, 0
-t02:    db 'Modus 02h  Text 80x25', 0, '640x200  16 Farben, s/w', 0, F_CGA, 0
-t03:    db 'Modus 03h  Text 80x25', 0, '640x200  16 Farben', 0, F_CGA, 0
-te00:   db 'Modus 00h  Text 40x25', 0, '320x350  16 Farben', 0, F_ECD, 0
-te01:   db 'Modus 01h  Text 40x25', 0, '320x350  16 Farben', 0, F_ECD, 0
-te02:   db 'Modus 02h  Text 80x25', 0, '640x350  16 Farben', 0, F_ECD, 0
-te03:   db 'Modus 03h  Text 80x25', 0, '640x350  16 Farben', 0, F_ECD, 0
-t04:    db 'Modus 04h  Grafik', 0, '320x200  4 Farben', 0, F_CGA, 0
-t05:    db 'Modus 05h  Grafik', 0, '320x200  4 Farben, s/w', 0, F_CGA, 0
-t06:    db 'Modus 06h  Grafik', 0, '640x200  2 Farben', 0, F_CGA, 0
-t07:    db 'Modus 07h  Text 80x25', 0, '720x350  mono', 0, F_MDA, 0
-t0D:    db 'Modus 0Dh  Grafik', 0, '320x200  16 Farben', 0, F_CGA, 0
-t0E:    db 'Modus 0Eh  Grafik', 0, '640x200  16 Farben', 0, F_CGA, 0
-t0F:    db 'Modus 0Fh  Grafik', 0, '640x350  mono', 0, F_MDA, 0
-t10:    db 'Modus 10h  Grafik', 0, '640x350  16 Farben', 0, F_ECD, 0
+t00:    db 'Mode 00h  Text 40x25', 0, '320x200  16 colours, b/w', 0, F_CGA, 0
+t01:    db 'Mode 01h  Text 40x25', 0, '320x200  16 colours', 0, F_CGA, 0
+t02:    db 'Mode 02h  Text 80x25', 0, '640x200  16 colours, b/w', 0, F_CGA, 0
+t03:    db 'Mode 03h  Text 80x25', 0, '640x200  16 colours', 0, F_CGA, 0
+te00:   db 'Mode 00h  Text 40x25', 0, '320x350  16 colours', 0, F_ECD, 0
+te01:   db 'Mode 01h  Text 40x25', 0, '320x350  16 colours', 0, F_ECD, 0
+te02:   db 'Mode 02h  Text 80x25', 0, '640x350  16 colours', 0, F_ECD, 0
+te03:   db 'Mode 03h  Text 80x25', 0, '640x350  16 colours', 0, F_ECD, 0
+t04:    db 'Mode 04h  Graphics', 0, '320x200  4 colours', 0, F_CGA, 0
+t05:    db 'Mode 05h  Graphics', 0, '320x200  4 colours, b/w', 0, F_CGA, 0
+t06:    db 'Mode 06h  Graphics', 0, '640x200  2 colours', 0, F_CGA, 0
+t07:    db 'Mode 07h  Text 80x25', 0, '720x350  mono', 0, F_MDA, 0
+t0D:    db 'Mode 0Dh  Graphics', 0, '320x200  16 colours', 0, F_CGA, 0
+t0E:    db 'Mode 0Eh  Graphics', 0, '640x200  16 colours', 0, F_CGA, 0
+t0F:    db 'Mode 0Fh  Graphics', 0, '640x350  mono', 0, F_MDA, 0
+t10:    db 'Mode 10h  Graphics', 0, '640x350  16 colours', 0, F_ECD, 0
 
 s_title:        db 'GMTEST ', VERSION, 0
-s_card:         db 'Karte: ', 0
+s_card:         db 'Card: ', 0
 s_cga:          db 'CGA', 0
 s_mda:          db 'MDA', 0
-s_ega_cga:      db 'EGA, CGA-Monitor', 0
-s_ega_ecd:      db 'EGA, EGA-Monitor', 0
-s_ega_mono:     db 'EGA, Mono-Monitor', 0
-s_keys:         db 'Taste: weiter   ESC: Ende', 0
+s_ega_cga:      db 'EGA, CGA monitor', 0
+s_ega_ecd:      db 'EGA, EGA monitor', 0
+s_ega_mono:     db 'EGA, mono monitor', 0
+s_keys:         db 'Key: next   ESC: quit', 0
 
 oldmode:        db 0
 width:          db 0

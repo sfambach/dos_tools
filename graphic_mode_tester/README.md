@@ -1,58 +1,58 @@
 # Graphic Mode Tester (GMTEST)
 
-DOS-Programm für IBM PC/XT/AT, das alle Videomodi der eingebauten Grafikkarte nacheinander mit einem statischen Testbild anzeigt. Gedacht zum Prüfen von Grafikkarten, Monitoren und Video-Konvertern (z. B. MCE Blaster).
+DOS program for the IBM PC/XT/AT that shows every video mode of the installed graphics card one after another, each with a static test image. Meant for checking graphics cards, monitors and video converters (e.g. the MCE Blaster).
 
-## Testbild
+## Test image
 
-Pro Modus:
+For each mode:
 
-- weißer Rahmen am Bildrand (1 Pixel bzw. Doppellinie im Textmodus)
-- Modusnummer, Auflösung, Farben
-- Zeilen- und Bildfrequenz (statisch aus Tabelle, nicht gemessen)
-- erkannte Karte
-- Farbbalken mit allen Farben des Modus
+- white border along the screen edge (1 pixel, or a double line in text modes)
+- mode number, resolution, colours
+- horizontal and vertical frequency (static values from a table, not measured)
+- detected card
+- colour bars with every colour of the mode
 
-Bedienung: beliebige Taste = nächster Modus, `ESC` = Ende (alter Modus wird wiederhergestellt).
+Controls: any key = next mode, `ESC` = quit (the previous mode is restored).
 
-| CGA Modus 03h | CGA Modus 04h | CGA Modus 06h |
+| CGA mode 03h | CGA mode 04h | CGA mode 06h |
 |---|---|---|
-| ![CGA Modus 03h](doc/cga-mode03.png) | ![CGA Modus 04h](doc/cga-mode04.png) | ![CGA Modus 06h](doc/cga-mode06.png) |
-| **EGA Modus 0Dh** | **EGA Modus 10h** | **MDA Modus 07h** |
-| ![EGA Modus 0Dh](doc/ega-mode0d.png) | ![EGA Modus 10h](doc/ega-mode10.png) | ![MDA Modus 07h](doc/mda-mode07.png) |
+| ![CGA mode 03h](doc/cga-mode03.png) | ![CGA mode 04h](doc/cga-mode04.png) | ![CGA mode 06h](doc/cga-mode06.png) |
+| **EGA mode 0Dh** | **EGA mode 10h** | **MDA mode 07h** |
+| ![EGA mode 0Dh](doc/ega-mode0d.png) | ![EGA mode 10h](doc/ega-mode10.png) | ![MDA mode 07h](doc/mda-mode07.png) |
 
-*Screenshots aus DOSBox.*
+*Screenshots taken in DOSBox.*
 
-## Modi
+## Modes
 
-| Karte | Modi |
+| Card | Modes |
 |---|---|
 | MDA / Hercules | 07h |
 | CGA | 00h–06h |
-| EGA mit CGA-Monitor | 00h–06h, 0Dh, 0Eh |
-| EGA mit EGA-Monitor | 00h–06h (Text mit 350 Zeilen), 0Dh, 0Eh, 10h |
-| EGA mit Mono-Monitor | 07h, 0Fh |
+| EGA with CGA monitor | 00h–06h, 0Dh, 0Eh |
+| EGA with EGA monitor | 00h–06h (text with 350 lines), 0Dh, 0Eh, 10h |
+| EGA with mono monitor | 07h, 0Fh |
 
-| Modus | Auflösung | Frequenz |
+| Mode | Resolution | Frequency |
 |---|---|---|
-| 00h–06h, 0Dh, 0Eh | 320/640 × 200 | 15,7 kHz / 60 Hz |
-| 00h–03h auf EGA-Monitor, 10h | 320/640 × 350 | 21,8 kHz / 60 Hz |
-| 07h, 0Fh | 720/640 × 350 | 18,4 kHz / 50 Hz |
+| 00h–06h, 0Dh, 0Eh | 320/640 × 200 | 15.7 kHz / 60 Hz |
+| 00h–03h on EGA monitor, 10h | 320/640 × 350 | 21.8 kHz / 60 Hz |
+| 07h, 0Fh | 720/640 × 350 | 18.4 kHz / 50 Hz |
 
-Erkennung: EGA über `INT 10h AH=12h`, Monitor über die DIP-Schalter der EGA-Karte (Schalter 0011/1001 = EGA-Monitor), sonst MDA/CGA über das Equipment-Wort (`INT 11h`). Eine VGA-Karte meldet sich als EGA mit EGA-Monitor.
+Detection: EGA via `INT 10h AH=12h`, monitor type via the EGA card's DIP switches (0011/1001 = EGA monitor), otherwise MDA/CGA via the equipment word (`INT 11h`). A VGA card reports itself as EGA with EGA monitor.
 
-## Bauen
+## Building
 
 ```sh
-make            # braucht nasm, erzeugt bin/GMTEST.COM
-make screenshots  # optional: Screenshots in DOSBox (dosbox, Xvfb, xdotool, imagemagick)
+make              # needs nasm, produces bin/GMTEST.COM
+make screenshots  # optional: screenshots in DOSBox (dosbox, Xvfb, xdotool, imagemagick)
 ```
 
-Fertige `GMTEST.COM` liegt in den GitHub-Releases (Tag `graphic_mode_tester-v*`) und als Build-Artefakt jeder CI-Ausführung. Läuft auf 8088, nur 8086-Befehle.
+A ready-made `GMTEST.COM` is attached to the GitHub releases (tag `graphic_mode_tester-v*`) and to every CI run as a build artifact. Runs on an 8088, uses 8086 instructions only.
 
-## Lizenz
+## License
 
 [MIT](../LICENSE)
 
 ## AI disclosure
 
-Programm und Dokumentation wurden mit Unterstützung von KI (Claude, Anthropic) erstellt. Getestet bisher nur in DOSBox (CGA, EGA, Hercules), nicht auf echter Hardware.
+Program and documentation were created with the help of AI (Claude, Anthropic). So far tested in DOSBox only (CGA, EGA, Hercules), not on real hardware.
