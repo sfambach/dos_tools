@@ -19,8 +19,8 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: KBTEST
-          path: keyboard_test/bin/KBTEST.COM
+          path: keyboard_test/bin/*.COM
       - if: startsWith(github.ref, 'refs/tags/keyboard_test-v')
         uses: softprops/action-gh-release@v2
         with:
-          files: keyboard_test/bin/KBTEST.COM
+          files: keyboard_test/bin/*.COM
