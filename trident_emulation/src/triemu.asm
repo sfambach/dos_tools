@@ -6,7 +6,7 @@
 ; Usage: TRIEMU            show chip ID, emulation and switch settings
 ;        TRIEMU VGA        back to VGA (BIOS mode 3)
 ;        TRIEMU EGA        EGA emulation, 80x25 with EGA timing (21.8 kHz)
-;        TRIEMU CGA        CGA emulation, 80x25 with CGA timing (15.5 kHz)
+;        TRIEMU CGA        CGA emulation, 80x25 with CGA timing (15.7 kHz)
 ;        TRIEMU MDA        MDA emulation, 80x25 with MDA timing (18.4 kHz)
 ;        /F                skip the Trident check
 ;
@@ -16,7 +16,7 @@
         cpu     8086
         org     100h
 
-%define VERSION '0.2.0'
+%define VERSION '0.2.1'
 
 SEQ     equ     3C4h
 REG_ID  equ     0Bh                     ; chip version, also old/new mode select
@@ -464,13 +464,13 @@ puts:
 ; pair count, then CRTC index (low byte) / value (high byte) pairs.
 ; Overflow 1Fh carries bit 8 of every vertical value, 11h ends retrace and
 ; keeps R0-R7 writable.
-; CGA: 28.322 MHz / 2, 114 characters, 262 lines -> 15.53 kHz / 59.3 Hz
+; CGA: 25.175 MHz / 2, 100 characters, 262 lines -> 15.73 kHz / 60.0 Hz (as CGA15)
 timing_cga:
-        db      27h, 09h
+        db      23h, 09h
         dw      3D4h
         db      8, (timing_cga_end - $ - 2) / 2
-        db      00h, 114 - 5, 01h, 79, 02h, 80, 03h, 80h | (112 & 1Fh)
-        db      04h, 90, 05h, 80h | (100 & 1Fh), 13h, 40
+        db      00h, 100 - 5, 01h, 79, 02h, 80, 03h, 80h | (98 & 1Fh)
+        db      04h, 85, 05h, 80h | (94 & 1Fh), 13h, 40
         db      06h, (262 - 2) & 0FFh, 07h, 11h, 08h, 00h, 09h, 47h
         db      0Ah, 06h, 0Bh, 07h, 10h, 224, 12h, 199
         db      15h, 200, 16h, 261 & 0FFh, 11h, 03h

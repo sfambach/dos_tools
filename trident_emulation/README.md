@@ -10,7 +10,7 @@ Small DOS tool that switches the emulation mode of a Trident TVGA8800/8900 graph
 TRIEMU            show chip ID, emulation and switch settings
 TRIEMU VGA        back to VGA, BIOS mode 3
 TRIEMU EGA        EGA emulation, 80x25 text with EGA timing (21.8 kHz)
-TRIEMU CGA        CGA emulation, 80x25 text with CGA timing (15.5 kHz)
+TRIEMU CGA        CGA emulation, 80x25 text with CGA timing (15.7 kHz)
 TRIEMU MDA        MDA emulation, 80x25 text with MDA timing (18.4 kHz)
 TRIEMU HGC        same as MDA
 /F                skip the Trident check
@@ -32,9 +32,11 @@ Since 0.2.0 the tool sets the matching VGA BIOS mode, loads the font, switches t
 
 | | Clock | Characters per line (8 dots) | Lines per frame | Result |
 |---|---|---|---|---|
-| CGA | 28.322 MHz / 2 | 114, 80 visible | 262, 200 visible | 15.53 kHz / 59.3 Hz, +H +V |
+| CGA | 25.175 MHz / 2 | 100, 80 visible | 262, 200 visible | 15.73 kHz / 60.0 Hz, +H +V |
 | EGA | 25.175 MHz | 144, 80 visible | 364, 350 visible | 21.85 kHz / 60.0 Hz, +H −V |
 | MDA | 28.322 MHz / 2 | 96, 80 visible | 370, 350 visible | 18.44 kHz / 49.8 Hz, +H −V |
+
+Test 2026-10-12 with 0.2.0 (CGA then 28.322 MHz / 2): sync on the 9-pin TTL output stuck low, cause unknown. `CGA15` has diagnostic switches (`/N`, `/P`, `/K`) to narrow it down.
 
 Open: whether the 9-pin TTL output of the TG Expert EVGA carries this timing or only the analog VGA output does.
 
