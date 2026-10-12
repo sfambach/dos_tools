@@ -9,7 +9,7 @@
         cpu     8086
         org     100h
 
-%define VERSION '0.1.0'
+%define VERSION '0.2.0'
 
 T_TEXT  equ     0
 T_CGA   equ     1               ; interleaved CGA graphics (modes 4-6)
@@ -73,6 +73,16 @@ next_mode:
 ; detect - pick the mode list for the installed adapter
 ; out: si = list, [listhead] = list, [cardname] = adapter name
 detect:
+        mov     ax, 1A00h               ; VGA: read display combination
+        int     10h
+        cmp     al, 1Ah
+        jne     .no_vga
+        cmp     bl, 08h                 ; VGA with analog colour monitor
+        jne     .no_vga
+        mov     si, list_vga
+        mov     word [cardname], s_vga
+        jmp     .done
+.no_vga:
         mov     ah, 12h                 ; EGA: get configuration
         mov     bl, 10h
         int     10h
@@ -146,7 +156,17 @@ show_mode:
         call    print
         mov     si, [cardname]
         call    print_here
-        mov     dh, 22
+        push    es
+        mov     ax, 40h
+        mov     es, ax
+        mov     dh, [es:84h]            ; last text row, EGA/VGA BIOS only
+        pop     es
+        cmp     dh, 24                  ; CGA/MDA BIOS leave it unset
+        jae     .rows
+        mov     dh, 24
+.rows:
+        sub     dh, 2
+        mov     dl, 3
         mov     si, s_keys
         call    print
         ret
@@ -399,12 +419,25 @@ m0D:    MODEDESC 0Dh, T_EGA, 0A000h, 40, 0Fh, 200, 80h, 01h, 16, bars_ega16, t0D
 m0E:    MODEDESC 0Eh, T_EGA, 0A000h, 80, 0Fh, 200, 80h, 01h, 16, bars_ega16, t0E
 m0F:    MODEDESC 0Fh, T_EGA, 0A000h, 80, 05h, 350, 80h, 01h, 4, bars_egamono, t0F
 m10:    MODEDESC 10h, T_EGA, 0A000h, 80, 0Fh, 350, 80h, 01h, 16, bars_ega16, t10
+; VGA runs every mode at 31.5 kHz, 200-line modes are double scanned
+v00:    MODEDESC 00h, T_TEXT, 0B800h, 40, 0Fh, 0, 0, 0, 16, bars_text, tv00
+v01:    MODEDESC 01h, T_TEXT, 0B800h, 40, 0Fh, 0, 0, 0, 16, bars_text, tv01
+v02:    MODEDESC 02h, T_TEXT, 0B800h, 80, 0Fh, 0, 0, 0, 16, bars_text, tv02
+v03:    MODEDESC 03h, T_TEXT, 0B800h, 80, 0Fh, 0, 0, 0, 16, bars_text, tv03
+v04:    MODEDESC 04h, T_CGA, 0B800h, 80, 03h, 200, 0C0h, 03h, 4, bars_cga4, tv04
+v05:    MODEDESC 05h, T_CGA, 0B800h, 80, 03h, 200, 0C0h, 03h, 4, bars_cga4, tv05
+v06:    MODEDESC 06h, T_CGA, 0B800h, 80, 01h, 200, 80h, 01h, 4, bars_cga2, tv06
+v0D:    MODEDESC 0Dh, T_EGA, 0A000h, 40, 0Fh, 200, 80h, 01h, 16, bars_ega16, tv0D
+v0E:    MODEDESC 0Eh, T_EGA, 0A000h, 80, 0Fh, 200, 80h, 01h, 16, bars_ega16, tv0E
+v10:    MODEDESC 10h, T_EGA, 0A000h, 80, 0Fh, 350, 80h, 01h, 16, bars_ega16, tv10
+v12:    MODEDESC 12h, T_EGA, 0A000h, 80, 0Fh, 480, 80h, 01h, 16, bars_ega16, tv12
 
 list_cga:       dw m00, m01, m02, m03, m04, m05, m06, 0
 list_mda:       dw m07, 0
 list_ega_cga:   dw m00, m01, m02, m03, m04, m05, m06, m0D, m0E, 0
 list_ega_ecd:   dw e00, e01, e02, e03, m04, m05, m06, m0D, m0E, m10, 0
 list_ega_mono:  dw m07, m0F, 0
+list_vga:       dw v00, v01, v02, v03, v04, v05, v06, v0D, v0E, v10, v12, 0
 
 ; text bars: character, attribute
 bars_text:
@@ -424,6 +457,8 @@ bars_egamono:   db 0, 1, 4, 5
 %define F_CGA '15.7 kHz / 60 Hz'
 %define F_MDA '18.4 kHz / 50 Hz'
 %define F_ECD '21.8 kHz / 60 Hz'
+%define F_V70 '31.5 kHz / 70 Hz'
+%define F_V60 '31.5 kHz / 60 Hz'
 
 t00:    db 'Mode 00h  Text 40x25', 0, '320x200  16 colours, b/w', 0, F_CGA, 0
 t01:    db 'Mode 01h  Text 40x25', 0, '320x200  16 colours', 0, F_CGA, 0
@@ -441,6 +476,17 @@ t0D:    db 'Mode 0Dh  Graphics', 0, '320x200  16 colours', 0, F_CGA, 0
 t0E:    db 'Mode 0Eh  Graphics', 0, '640x200  16 colours', 0, F_CGA, 0
 t0F:    db 'Mode 0Fh  Graphics', 0, '640x350  mono', 0, F_MDA, 0
 t10:    db 'Mode 10h  Graphics', 0, '640x350  16 colours', 0, F_ECD, 0
+tv00:   db 'Mode 00h  Text 40x25', 0, '360x400  16 colours, b/w', 0, F_V70, 0
+tv01:   db 'Mode 01h  Text 40x25', 0, '360x400  16 colours', 0, F_V70, 0
+tv02:   db 'Mode 02h  Text 80x25', 0, '720x400  16 colours, b/w', 0, F_V70, 0
+tv03:   db 'Mode 03h  Text 80x25', 0, '720x400  16 colours', 0, F_V70, 0
+tv04:   db 'Mode 04h  Graphics', 0, '320x200  4 col., 400 lines', 0, F_V70, 0
+tv05:   db 'Mode 05h  Graphics', 0, '320x200  4 col., 400 lines', 0, F_V70, 0
+tv06:   db 'Mode 06h  Graphics', 0, '640x200  2 col., 400 lines', 0, F_V70, 0
+tv0D:   db 'Mode 0Dh  Graphics', 0, '320x200  16 col., 400 lines', 0, F_V70, 0
+tv0E:   db 'Mode 0Eh  Graphics', 0, '640x200  16 col., 400 lines', 0, F_V70, 0
+tv10:   db 'Mode 10h  Graphics', 0, '640x350  16 colours', 0, F_V70, 0
+tv12:   db 'Mode 12h  Graphics', 0, '640x480  16 colours', 0, F_V60, 0
 
 s_title:        db 'GMTEST ', VERSION, 0
 s_card:         db 'Card: ', 0
@@ -449,6 +495,7 @@ s_mda:          db 'MDA', 0
 s_ega_cga:      db 'EGA, CGA monitor', 0
 s_ega_ecd:      db 'EGA, EGA monitor', 0
 s_ega_mono:     db 'EGA, mono monitor', 0
+s_vga:          db 'VGA (all modes 31.5 kHz)', 0
 s_keys:         db 'Key: next   ESC: quit', 0
 
 oldmode:        db 0
