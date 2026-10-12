@@ -35,6 +35,8 @@ For `CGA` and `MDA` the tool first sets the matching VGA BIOS mode (font, palett
 
 Card BIOS (TG Expert EVGA, C3-127, from a disassembly, unverified): at POST it reads the switch nibble (3C4h index 0Fh). If it is `1100` and 3CCh reads 67h, the card hands INT 10h over to the mainboard BIOS (`int 42h`). `TRIEMU` without arguments shows this nibble as `Switches:`.
 
+TELLSET.EXE (Trident utility package VC415, 1993; disassembled, unverified) reads the emulation the same way TRIEMU does. It prints `Emulate:` only when old mode index 0Dh bits 0–2 are not zero. The name comes from new mode index 0Fh: 0 = VGA, 1 = EGA, 2 = CGA, 3 = HERC. `TRIEMU` shows this value as `New 0Fh:`.
+
 Open: whether the 8800BR in emulation mode 5 really takes over the 6845 values as 15.7 kHz / 18.4 kHz timing, and whether `EGA` changes the timing at all, is not known.
 
 Source: [vgadoc TRIDENT.TXT](https://pdos.csail.mit.edu/6.1810/2017/readings/hardware/vgadoc/TRIDENT.TXT)

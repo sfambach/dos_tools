@@ -374,6 +374,27 @@ show_status:
         int     21h
         shl     bl, 1
         loop    .bit
+
+        ; TELLSET.EXE (VC415) names the emulation from new mode index 0Fh
+        mov     dx, s_type
+        call    puts
+        mov     al, REG_ID              ; reading index 0Bh selects new mode
+        call    read_seq
+        mov     al, REG_PUM
+        call    read_seq
+        mov     bl, al
+        call    old_mode
+        mov     al, bl
+        call    puthex
+        cmp     bl, 3
+        ja      .done
+        mov     dx, s_space
+        call    puts
+        xor     bh, bh
+        shl     bx, 1
+        mov     dx, [type_names + bx]
+        call    puts
+.done:
         mov     dx, s_crlf
         jmp     puts
 
@@ -467,6 +488,12 @@ s_emu_cga:      db 'CGA/MDA/Hercules$'
 s_emu_other:    db 'undocumented$'
 s_switch:       db 13, 10, 'Switches:   $'
 s_space:        db ' $'
+s_type:         db 13, 10, 'New 0Fh:    $'
+s_type_vga:     db 'VGA$'
+s_type_ega:     db 'EGA$'
+s_type_cga:     db 'CGA$'
+s_type_herc:    db 'HERC$'
+type_names:     dw s_type_vga, s_type_ega, s_type_cga, s_type_herc
 s_crlf:         db 13, 10, '$'
 
 target:         db 0FFh
