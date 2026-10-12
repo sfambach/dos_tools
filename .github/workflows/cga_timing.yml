@@ -1,0 +1,26 @@
+name: cga_timing
+
+on:
+  push:
+    tags: ['cga_timing-v*']
+  pull_request:
+    paths: ['cga_timing/**', '.github/workflows/cga_timing.yml']
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y nasm
+      - run: make -C cga_timing
+      - uses: actions/upload-artifact@v4
+        with:
+          name: CGA15
+          path: cga_timing/bin/CGA15.COM
+      - if: startsWith(github.ref, 'refs/tags/cga_timing-v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: cga_timing/bin/CGA15.COM
