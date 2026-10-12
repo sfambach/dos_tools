@@ -1,15 +1,18 @@
 # dos_tools
 
-Sammlung kleiner DOS-Werkzeuge für IBM PC/XT/AT und Kompatible.
+A collection of small DOS tools for the IBM PC/XT/AT and compatibles.
 
-| Werkzeug | Zweck |
+| Tool | Purpose |
 |---|---|
-| [graphic_mode_tester](graphic_mode_tester/) | Schaltet alle Videomodi der Grafikkarte (MDA, CGA, EGA) durch und zeigt je ein statisches Testbild |
+| [graphic_mode_tester](graphic_mode_tester/) | Cycles through every video mode of the graphics card (MDA, CGA, EGA) and shows a static test image for each |
+| [trident_emulation](trident_emulation/) | Switches a Trident TVGA8800/8900 between VGA, EGA and CGA/MDA emulation (replacement for SVM.EXE, untested on hardware) |
+| [cga_timing](cga_timing/) | Puts a standard VGA card into 80x25 text with CGA timing (15.5 kHz) for CGA monitors and video converters (untested on hardware) |
+| [keyboard_test](keyboard_test/) | KBTEST shows raw keyboard scan codes and the BIOS result for each key; ENHKB marks the keyboard as enhanced so KEYB uses its 102-key table |
 
-## Lizenz
+## License
 
 [MIT](LICENSE)
 
 ## AI disclosure
 
-Teile dieses Repositorys wurden mit Unterstützung von KI (Claude, Anthropic) erstellt und vom Maintainer geprüft.
+Parts of this repository were created with the help of AI (Claude, Anthropic) and reviewed by the maintainer.

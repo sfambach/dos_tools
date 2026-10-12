@@ -1,0 +1,26 @@
+name: keyboard_test
+
+on:
+  push:
+    tags: ['keyboard_test-v*']
+  pull_request:
+    paths: ['keyboard_test/**', '.github/workflows/keyboard_test.yml']
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y nasm
+      - run: make -C keyboard_test
+      - uses: actions/upload-artifact@v4
+        with:
+          name: KBTEST
+          path: keyboard_test/bin/*.COM
+      - if: startsWith(github.ref, 'refs/tags/keyboard_test-v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: keyboard_test/bin/*.COM

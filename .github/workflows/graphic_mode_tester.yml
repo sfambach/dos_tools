@@ -1,0 +1,26 @@
+name: graphic_mode_tester
+
+on:
+  push:
+    tags: ['graphic_mode_tester-v*']
+  pull_request:
+    paths: ['graphic_mode_tester/**', '.github/workflows/graphic_mode_tester.yml']
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y nasm
+      - run: make -C graphic_mode_tester
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GMTEST
+          path: graphic_mode_tester/bin/GMTEST.COM
+      - if: startsWith(github.ref, 'refs/tags/graphic_mode_tester-v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: graphic_mode_tester/bin/GMTEST.COM
