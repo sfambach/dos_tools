@@ -39,6 +39,17 @@ Open: whether the 8800BR in emulation mode 5 really takes over the 6845 values a
 
 Source: [vgadoc TRIDENT.TXT](https://pdos.csail.mit.edu/6.1810/2017/readings/hardware/vgadoc/TRIDENT.TXT)
 
+Emulation DIP switches of TVGA8800 boards (from [dosdays](https://www.dosdays.co.uk/topics/Manufacturers/trident/tvga8800.php)); jumper J1 1-2 selects a CGA/MDA monitor:
+
+| Emulation | SW1 | SW2 | SW3 | SW4 |
+|---|---|---|---|---|
+| VGA | On | On | On | On |
+| EGA | Off | On | On | On |
+| CGA | On | Off | On | On |
+| MDA / Hercules | Off | Off | On | On |
+
+If SW1 is bit 0 and On reads as 1, the nibble `1100` is the MDA/Hercules position (inference, unverified). A cold boot with the switches set to CGA is the first hardware test to try before `TRIEMU`.
+
 ## Findings from SVM89.EXE
 
 Disassembly of `SVM89.EXE` 1.21 (Trident driver disk C3.0, for the TVGA8900):
