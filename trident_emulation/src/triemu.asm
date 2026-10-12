@@ -16,7 +16,7 @@
         cpu     8086
         org     100h
 
-%define VERSION '0.3.0'
+%define VERSION '0.3.1'
 
 SEQ     equ     3C4h
 REG_ID  equ     0Bh                     ; chip version, also old/new mode select
@@ -512,12 +512,14 @@ puts:
 ; EGA 350 lines: 25.175 MHz, 144 characters, 364 lines -> 21.85 kHz / 60.0 Hz.
 ; In emulation mode 3 the horizontal total is R0 + 2 as on the EGA, not
 ; R0 + 5 (measured 2026-10-12: R0 = 139 gave 141 characters, 22.32 kHz).
+; As on the IBM EGA (R4 52h, R5 00h) the sync ends with the line, so the
+; picture starts right after it (5.1 us sync).
 timing_ega:
         db      0A3h, 01h
         dw      3D4h
         db      14, (timing_ega_end - $ - 2) / 2
-        db      00h, 144 - 2, 01h, 79, 02h, 80, 03h, 80h | (140 & 1Fh)
-        db      04h, 96, 05h, (110 & 1Fh), 13h, 40
+        db      00h, 144 - 2, 01h, 79, 02h, 80, 03h, 80h | (143 & 1Fh)
+        db      04h, 128, 05h, 00h, 13h, 40     ; sync 128-143, no back porch
         db      06h, (364 - 2) & 0FFh, 07h, 1Fh, 08h, 00h, 09h, 4Dh
         db      0Ah, 0Bh, 0Bh, 0Ch, 10h, 352 & 0FFh, 12h, 349 & 0FFh
         db      15h, 350 & 0FFh, 16h, (364 - 2) & 0FFh, 11h, 03h
