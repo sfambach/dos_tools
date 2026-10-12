@@ -16,7 +16,7 @@
         cpu     8086
         org     100h
 
-%define VERSION '0.2.1'
+%define VERSION '0.3.0'
 
 SEQ     equ     3C4h
 REG_ID  equ     0Bh                     ; chip version, also old/new mode select
@@ -223,20 +223,31 @@ to_ega:
         mov     cx, 0329h
         jmp     text_done
 
-; CGA: VGA mode 3 with 8x8 font, emulation bits, then CGA timing
+; CGA/MDA: in emulation mode 5 the CRTC counts like a 6845 (measured
+; 2026-10-12: the IBM CGA values gave 114 characters x 264 lines at 28.322 MHz
+; with 8-dot characters, i.e. 31 kHz). Halving the dot clock (sequencer
+; index 01h bit 3) gives the original line rates.
 to_cga:
         call    set_equipment_color
         mov     ax, 0003h
-        int     10h
-        mov     ax, 1112h               ; 8x8 font
-        xor     bl, bl
         int     10h
         mov     dx, 3D4h
         call    unlock_crtc
         mov     al, EMU_CGA
         call    set_emulation
-        mov     si, timing_cga
-        call    retime
+        mov     dx, 3D8h
+        xor     al, al                  ; video off while reprogramming
+        out     dx, al
+        mov     dx, 3D4h
+        mov     si, crtc_cga
+        call    load_crtc
+        call    half_clock
+        mov     dx, 3D9h
+        mov     al, 30h
+        out     dx, al
+        mov     dx, 3D8h
+        mov     al, 29h                 ; 80x25 text, video on, blink
+        out     dx, al
         mov     ax, 0B800h
         mov     bx, 3D4h
         mov     cx, 0329h
@@ -246,22 +257,41 @@ to_mda:
         call    set_equipment_mono
         mov     ax, 0007h
         int     10h
-        mov     ax, 1111h               ; 8x14 font
-        xor     bl, bl
-        int     10h
         mov     dx, 3B4h
         call    unlock_crtc
         mov     al, EMU_CGA             ; 5 covers CGA, MDA and Hercules
         call    set_emulation
-        mov     si, timing_mda
-        call    retime
+        mov     dx, 3B8h
+        mov     al, 01h                 ; high resolution, video off
+        out     dx, al
+        mov     dx, 3B4h
+        mov     si, crtc_mda
+        call    load_crtc
+        call    half_clock
+        mov     dx, 3B8h
+        mov     al, 29h                 ; high resolution, video on, blink
+        out     dx, al
         mov     ax, 0B000h
         mov     bx, 3B4h
         mov     cx, 0729h
+
         jmp     text_done
 
+; half_clock - 8-dot characters, dot clock / 2, under sequencer reset
+half_clock:
+        mov     dx, SEQ
+        cli
+        mov     ax, 0100h
+        out     dx, ax
+        mov     ax, 0901h
+        out     dx, ax
+        mov     ax, 0300h
+        out     dx, ax
+        sti
+        ret
+
 ; retime - program clock, character width and CRTC from a timing record
-; in: si = timing record (see timing_cga)
+; in: si = timing record (see timing_ega)
 ; The 6845 values of the original cards mean nothing to the VGA CRTC and the
 ; emulation bits do not change the clock (measured 2026-10-12: 31 kHz stayed),
 ; so the timing is built from standard VGA registers instead.
@@ -334,6 +364,21 @@ text_done:
         mov     [es:65h], cl            ; mode register
         mov     byte [es:84h], 24       ; rows - 1
         pop     es
+        ret
+
+; load_crtc - write 16 CRTC registers from si to index/data at dx
+load_crtc:
+        xor     ah, ah
+.next:
+        mov     al, ah
+        out     dx, al
+        inc     dx
+        lodsb
+        out     dx, al
+        dec     dx
+        inc     ah
+        cmp     ah, 16
+        jb      .next
         ret
 
 set_equipment_color:
@@ -464,41 +509,28 @@ puts:
 ; pair count, then CRTC index (low byte) / value (high byte) pairs.
 ; Overflow 1Fh carries bit 8 of every vertical value, 11h ends retrace and
 ; keeps R0-R7 writable.
-; CGA: 25.175 MHz / 2, 100 characters, 262 lines -> 15.73 kHz / 60.0 Hz (as CGA15)
-timing_cga:
-        db      23h, 09h
-        dw      3D4h
-        db      8, (timing_cga_end - $ - 2) / 2
-        db      00h, 100 - 5, 01h, 79, 02h, 80, 03h, 80h | (98 & 1Fh)
-        db      04h, 85, 05h, 80h | (94 & 1Fh), 13h, 40
-        db      06h, (262 - 2) & 0FFh, 07h, 11h, 08h, 00h, 09h, 47h
-        db      0Ah, 06h, 0Bh, 07h, 10h, 224, 12h, 199
-        db      15h, 200, 16h, 261 & 0FFh, 11h, 03h
-timing_cga_end:
-
-; EGA 350 lines: 25.175 MHz, 144 characters, 364 lines -> 21.85 kHz / 60.0 Hz
+; EGA 350 lines: 25.175 MHz, 144 characters, 364 lines -> 21.85 kHz / 60.0 Hz.
+; In emulation mode 3 the horizontal total is R0 + 2 as on the EGA, not
+; R0 + 5 (measured 2026-10-12: R0 = 139 gave 141 characters, 22.32 kHz).
 timing_ega:
         db      0A3h, 01h
         dw      3D4h
         db      14, (timing_ega_end - $ - 2) / 2
-        db      00h, 144 - 5, 01h, 79, 02h, 80, 03h, 80h | (140 & 1Fh)
+        db      00h, 144 - 2, 01h, 79, 02h, 80, 03h, 80h | (140 & 1Fh)
         db      04h, 96, 05h, (110 & 1Fh), 13h, 40
         db      06h, (364 - 2) & 0FFh, 07h, 1Fh, 08h, 00h, 09h, 4Dh
         db      0Ah, 0Bh, 0Bh, 0Ch, 10h, 352 & 0FFh, 12h, 349 & 0FFh
         db      15h, 350 & 0FFh, 16h, (364 - 2) & 0FFh, 11h, 03h
 timing_ega_end:
 
-; MDA: 28.322 MHz / 2, 96 characters, 370 lines -> 18.44 kHz / 49.8 Hz
-timing_mda:
-        db      0A6h, 09h
-        dw      3B4h
-        db      14, (timing_mda_end - $ - 2) / 2
-        db      00h, 96 - 5, 01h, 79, 02h, 80, 03h, 80h | (94 & 1Fh)
-        db      04h, 83, 05h, (95 & 1Fh), 13h, 40
-        db      06h, (370 - 2) & 0FFh, 07h, 1Fh, 08h, 00h, 09h, 4Dh
-        db      0Ah, 0Bh, 0Bh, 0Ch, 10h, 352 & 0FFh, 12h, 349 & 0FFh
-        db      15h, 350 & 0FFh, 16h, (370 - 2) & 0FFh, 11h, 0Eh
-timing_mda_end:
+; IBM PC BIOS 6845 parameters for 80x25 text. MDA R0 is 5Fh instead of 61h:
+; 96 characters at 28.322 MHz / 16 give 18.44 kHz like the MDA's 18.43 kHz.
+; With the halved clock CGA gives 15.53 kHz / 59.3 Hz, MDA 18.44 kHz / 49.8 Hz.
+crtc_cga:       db 71h, 50h, 5Ah, 0Ah, 1Fh, 06h, 19h, 1Ch
+                db 02h, 07h, 06h, 07h, 00h, 00h, 00h, 00h
+crtc_mda:       db 5Fh, 50h, 52h, 0Fh, 19h, 06h, 19h, 19h
+                db 02h, 0Dh, 0Bh, 0Ch, 00h, 00h, 00h, 00h
+
 
 ; name (3 chars), emulation value, handler
 targets:        db 'VGA', EMU_VGA

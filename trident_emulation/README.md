@@ -10,7 +10,7 @@ Small DOS tool that switches the emulation mode of a Trident TVGA8800/8900 graph
 TRIEMU            show chip ID, emulation and switch settings
 TRIEMU VGA        back to VGA, BIOS mode 3
 TRIEMU EGA        EGA emulation, 80x25 text with EGA timing (21.8 kHz)
-TRIEMU CGA        CGA emulation, 80x25 text with CGA timing (15.7 kHz)
+TRIEMU CGA        CGA emulation, 80x25 text with CGA timing (15.5 kHz)
 TRIEMU MDA        MDA emulation, 80x25 text with MDA timing (18.4 kHz)
 TRIEMU HGC        same as MDA
 /F                skip the Trident check
@@ -28,15 +28,22 @@ On the card, also set the output to TTL (jumper/DIP switches per the card's manu
 
 Version 0.1.0 wrote the IBM 6845 values into the CRTC. A test on a TVGA8800BR (2026-10-12) showed that this does not work: `TRIEMU CGA` gave 200 lines at 31 kHz / 117 Hz, and `TRIEMU EGA` stayed at 32.4 kHz / 72 Hz. Neither the emulation bits nor the 6845 values change the clock.
 
-Since 0.2.0 the tool sets the matching VGA BIOS mode, loads the font, switches the emulation bits and then builds the timing from standard VGA registers (misc output, sequencer clocking mode, CRTC), like [`CGA15`](../cga_timing/):
+Measurements on the 9-pin TTL output of a TVGA8800BR (MCE Blaster, 2026-10-12) show that the CRTC changes its behaviour with the emulation bits:
 
-| | Clock | Characters per line (8 dots) | Lines per frame | Result |
-|---|---|---|---|---|
-| CGA | 25.175 MHz / 2 | 100, 80 visible | 262, 200 visible | 15.73 kHz / 60.0 Hz, +H +V |
-| EGA | 25.175 MHz | 144, 80 visible | 364, 350 visible | 21.85 kHz / 60.0 Hz, +H −V |
-| MDA | 28.322 MHz / 2 | 96, 80 visible | 370, 350 visible | 18.44 kHz / 49.8 Hz, +H −V |
+| Emulation | CRTC counts like | Evidence |
+|---|---|---|
+| 5 (CGA/MDA) | 6845: total = R0 + 1, rows × (R9 + 1) + R5 | IBM CGA values gave 114 characters × 264 lines at 28.322 MHz / 8 = 31.05 kHz / 117 Hz |
+| 3 (EGA) | EGA: horizontal total = R0 + 2 | R0 = 139 gave 141 characters: 22.32 kHz instead of 21.85 kHz |
 
-Test 2026-10-12 with 0.2.0 (CGA then 28.322 MHz / 2): sync on the 9-pin TTL output stuck low, cause unknown. `CGA15` has diagnostic switches (`/N`, `/P`, `/K`) to narrow it down.
+So since 0.3.0:
+
+| | Registers | Expected |
+|---|---|---|
+| CGA | IBM CGA 6845 values, dot clock halved (sequencer index 01h = 09h) | 15.53 kHz / 59.3 Hz, 200 lines |
+| MDA | IBM MDA 6845 values with R0 = 5Fh (96 characters), dot clock halved | 18.44 kHz / 49.8 Hz with 8-dot characters (16.4 kHz if the card keeps 9-dot characters) |
+| EGA | VGA mode 3, 8x14 font, 25.175 MHz, R0 = 142 (144 characters), 364 lines | 21.85 kHz / 60.0 Hz, 350 lines |
+
+Version 0.2.0 wrote VGA-style values in CGA and MDA emulation, which the 6845-like CRTC turned into no sync (CGA) or 34.2 kHz / 28.3 Hz (MDA).
 
 Open: whether the 9-pin TTL output of the TG Expert EVGA carries this timing or only the analog VGA output does.
 
