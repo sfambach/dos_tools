@@ -35,12 +35,12 @@ Measurements on the 9-pin TTL output of a TVGA8800BR (MCE Blaster, 2026-10-12) s
 | 5 (CGA/MDA) | 6845: total = R0 + 1, rows × (R9 + 1) + R5 | IBM CGA values gave 114 characters × 264 lines at 28.322 MHz / 8 = 31.05 kHz / 117 Hz |
 | 3 (EGA) | EGA: horizontal total = R0 + 2 | R0 = 139 gave 141 characters: 22.32 kHz instead of 21.85 kHz |
 
-So since 0.3.0:
+The sequencer's dot clock halving (index 01h bit 3) is ignored in emulation 5 (0.3.1 CGA stayed at 31.05 kHz). So since 0.3.3:
 
 | | Registers | Expected |
 |---|---|---|
-| CGA | IBM CGA 6845 values, dot clock halved (sequencer index 01h = 09h) | 15.53 kHz / 59.3 Hz, 200 lines |
-| MDA | IBM MDA 6845 values with R0 = 5Fh (96 characters), dot clock halved | 18.44 kHz / 49.8 Hz with 8-dot characters (16.4 kHz if the card keeps 9-dot characters) |
+| CGA | IBM CGA 6845 values, 8x8 font, mode register bit 0 cleared (half character clock, as for 40 columns) | 15.53 kHz / 59.3 Hz, 200 lines |
+| MDA | IBM MDA 6845 values with R0 = 5Fh (96 characters), mode register bit 0 cleared | 18.44 kHz / 49.8 Hz with 8-dot characters (16.4 kHz if the card keeps 9-dot characters) |
 | EGA | VGA mode 3, 8x14 font, 25.175 MHz, R0 = 142 (144 characters), 364 lines | 21.85 kHz / 60.0 Hz, 350 lines |
 
 Version 0.2.0 wrote VGA-style values in CGA and MDA emulation, which the 6845-like CRTC turned into no sync (CGA) or 34.2 kHz / 28.3 Hz (MDA).

@@ -16,7 +16,7 @@
         cpu     8086
         org     100h
 
-%define VERSION '0.3.2'
+%define VERSION '0.3.3'
 
 SEQ     equ     3C4h
 REG_ID  equ     0Bh                     ; chip version, also old/new mode select
@@ -225,11 +225,16 @@ to_ega:
 
 ; CGA/MDA: in emulation mode 5 the CRTC counts like a 6845 (measured
 ; 2026-10-12: the IBM CGA values gave 114 characters x 264 lines at 28.322 MHz
-; with 8-dot characters, i.e. 31 kHz). Halving the dot clock (sequencer
-; index 01h bit 3) gives the original line rates.
+; with 8-dot characters, i.e. 31 kHz). The sequencer's dot clock halving is
+; ignored in this mode (measured), so the mode register's bit 0 is cleared,
+; which halves the character clock on a real CGA (40-column timing) while
+; the 6845 still fetches 80 characters: 15.53 kHz with 14.16 MHz pixels.
 to_cga:
         call    set_equipment_color
         mov     ax, 0003h
+        int     10h
+        mov     ax, 1112h               ; 8x8 font for 8 scan lines per row
+        xor     bl, bl
         int     10h
         mov     dx, 3D4h
         call    unlock_crtc
@@ -241,12 +246,12 @@ to_cga:
         mov     dx, 3D4h
         mov     si, crtc_cga
         call    load_crtc
-        call    half_clock
+        call    pan_zero
         mov     dx, 3D9h
         mov     al, 30h
         out     dx, al
         mov     dx, 3D8h
-        mov     al, 29h                 ; 80x25 text, video on, blink
+        mov     al, 28h                 ; video on, blink, bit 0 = 0: half clock
         out     dx, al
         mov     ax, 0B800h
         mov     bx, 3D4h
@@ -267,9 +272,9 @@ to_mda:
         mov     dx, 3B4h
         mov     si, crtc_mda
         call    load_crtc
-        call    half_clock
+        call    pan_zero
         mov     dx, 3B8h
-        mov     al, 29h                 ; high resolution, video on, blink
+        mov     al, 28h                 ; video on, blink, bit 0 = 0: half clock
         out     dx, al
         mov     ax, 0B000h
         mov     bx, 3B4h
@@ -277,17 +282,20 @@ to_mda:
 
         jmp     text_done
 
-; half_clock - 8-dot characters, dot clock / 2, under sequencer reset
-half_clock:
-        mov     dx, SEQ
-        cli
-        mov     ax, 0100h
-        out     dx, ax
-        mov     ax, 0901h
-        out     dx, ax
-        mov     ax, 0300h
-        out     dx, ax
-        sti
+; pan_zero - horizontal panning 0 (mode 3/7 use 8 for 9-dot characters,
+; which doubled the first character of every row in emulation)
+pan_zero:
+        push    dx
+        mov     dx, 3DAh
+        in      al, dx
+        mov     dx, 3BAh
+        in      al, dx
+        mov     dx, 3C0h
+        mov     al, 33h                 ; index 13h, video on
+        out     dx, al
+        xor     al, al
+        out     dx, al
+        pop     dx
         ret
 
 ; retime - program clock, character width and CRTC from a timing record
@@ -531,7 +539,8 @@ timing_ega_end:
 
 ; IBM PC BIOS 6845 parameters for 80x25 text. MDA R0 is 5Fh instead of 61h:
 ; 96 characters at 28.322 MHz / 16 give 18.44 kHz like the MDA's 18.43 kHz.
-; With the halved clock CGA gives 15.53 kHz / 59.3 Hz, MDA 18.44 kHz / 49.8 Hz.
+; If the mode register halves the clock, CGA gives 15.53 kHz / 59.3 Hz and MDA
+; 18.44 kHz / 49.8 Hz (16.4 kHz with 9-dot characters).
 crtc_cga:       db 71h, 50h, 5Ah, 0Ah, 1Fh, 06h, 19h, 1Ch
                 db 02h, 07h, 06h, 07h, 00h, 00h, 00h, 00h
 crtc_mda:       db 5Fh, 50h, 52h, 0Fh, 19h, 06h, 19h, 19h
