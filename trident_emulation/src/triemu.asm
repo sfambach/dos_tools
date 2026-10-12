@@ -5,9 +5,9 @@
 ;
 ; Usage: TRIEMU            show chip ID, emulation and switch settings
 ;        TRIEMU VGA        back to VGA (BIOS mode 3)
-;        TRIEMU EGA        EGA emulation, BIOS mode 3
-;        TRIEMU CGA        CGA emulation, 80x25 programmed like an IBM CGA
-;        TRIEMU MDA        MDA emulation, 80x25 programmed like an IBM MDA
+;        TRIEMU EGA        EGA emulation, 80x25 with EGA timing (21.8 kHz)
+;        TRIEMU CGA        CGA emulation, 80x25 with CGA timing (15.5 kHz)
+;        TRIEMU MDA        MDA emulation, 80x25 with MDA timing (18.4 kHz)
 ;        /F                skip the Trident check
 ;
 ; Build: nasm -f bin -o TRIEMU.COM triemu.asm
@@ -16,7 +16,7 @@
         cpu     8086
         org     100h
 
-%define VERSION '0.1.0'
+%define VERSION '0.2.0'
 
 SEQ     equ     3C4h
 REG_ID  equ     0Bh                     ; chip version, also old/new mode select
@@ -209,34 +209,34 @@ to_ega:
         call    set_equipment_color
         mov     ax, 0003h
         int     10h
+        mov     ax, 1111h               ; 8x14 font
+        xor     bl, bl
+        int     10h
         mov     dx, 3D4h
         call    unlock_crtc
         mov     al, EMU_EGA
         call    set_emulation
-        ret
+        mov     si, timing_ega
+        call    retime
+        mov     ax, 0B800h
+        mov     bx, 3D4h
+        mov     cx, 0329h
+        jmp     text_done
 
-; CGA: start from VGA mode 3 (font, palette), then switch emulation and
-; program the 6845 registers, mode and colour register like the IBM CGA BIOS.
+; CGA: VGA mode 3 with 8x8 font, emulation bits, then CGA timing
 to_cga:
         call    set_equipment_color
         mov     ax, 0003h
+        int     10h
+        mov     ax, 1112h               ; 8x8 font
+        xor     bl, bl
         int     10h
         mov     dx, 3D4h
         call    unlock_crtc
         mov     al, EMU_CGA
         call    set_emulation
-        mov     dx, 3D8h
-        xor     al, al                  ; video off while reprogramming
-        out     dx, al
-        mov     dx, 3D4h
-        mov     si, crtc_cga
-        call    load_crtc
-        mov     dx, 3D9h
-        mov     al, 30h
-        out     dx, al
-        mov     dx, 3D8h
-        mov     al, 29h                 ; 80x25 text, video on, blink
-        out     dx, al
+        mov     si, timing_cga
+        call    retime
         mov     ax, 0B800h
         mov     bx, 3D4h
         mov     cx, 0329h
@@ -246,23 +246,70 @@ to_mda:
         call    set_equipment_mono
         mov     ax, 0007h
         int     10h
+        mov     ax, 1111h               ; 8x14 font
+        xor     bl, bl
+        int     10h
         mov     dx, 3B4h
         call    unlock_crtc
         mov     al, EMU_CGA             ; 5 covers CGA, MDA and Hercules
         call    set_emulation
-        mov     dx, 3B8h
-        mov     al, 01h                 ; high resolution, video off
-        out     dx, al
-        mov     dx, 3B4h
-        mov     si, crtc_mda
-        call    load_crtc
-        mov     dx, 3B8h
-        mov     al, 29h                 ; high resolution, video on, blink
-        out     dx, al
+        mov     si, timing_mda
+        call    retime
         mov     ax, 0B000h
         mov     bx, 3B4h
         mov     cx, 0729h
-        ; fall through
+        jmp     text_done
+
+; retime - program clock, character width and CRTC from a timing record
+; in: si = timing record (see timing_cga)
+; The 6845 values of the original cards mean nothing to the VGA CRTC and the
+; emulation bits do not change the clock (measured 2026-10-12: 31 kHz stayed),
+; so the timing is built from standard VGA registers instead.
+retime:
+        cli
+        mov     dx, SEQ                 ; synchronous reset while the clock changes
+        mov     ax, 0100h
+        out     dx, ax
+        mov     dx, 3C2h
+        lodsb                           ; miscellaneous output
+        out     dx, al
+        mov     dx, SEQ
+        mov     al, 01h
+        mov     ah, [si]                ; clocking mode
+        inc     si
+        out     dx, ax
+        mov     ax, 0300h
+        out     dx, ax
+        sti
+        lodsw                           ; CRTC base
+        mov     dx, ax
+        lodsb
+        mov     bl, al                  ; character height
+        lodsb
+        mov     cl, al                  ; number of CRTC pairs
+        xor     ch, ch
+        mov     ax, 0011h               ; clear write protect of R0-R7
+        out     dx, ax
+.crtc:
+        lodsw
+        out     dx, ax
+        loop    .crtc
+        push    dx
+        add     dx, 6                   ; input status 1: reset attribute flip-flop
+        in      al, dx
+        mov     dx, 3C0h
+        mov     al, 33h                 ; horizontal panning 0, video on
+        out     dx, al
+        xor     al, al
+        out     dx, al
+        pop     dx
+        push    es
+        mov     ax, BDA
+        mov     es, ax
+        mov     [es:85h], bl
+        mov     byte [es:86h], 0
+        pop     es
+        ret
 
 ; text_done - clear screen at segment ax, update the BIOS data area
 ; bx = CRTC base, ch = BIOS mode, cl = mode register value
@@ -287,21 +334,6 @@ text_done:
         mov     [es:65h], cl            ; mode register
         mov     byte [es:84h], 24       ; rows - 1
         pop     es
-        ret
-
-; load_crtc - write 16 CRTC registers from si to index/data at dx
-load_crtc:
-        xor     ah, ah
-.next:
-        mov     al, ah
-        out     dx, al
-        inc     dx
-        lodsb
-        out     dx, al
-        dec     dx
-        inc     ah
-        cmp     ah, 16
-        jb      .next
         ret
 
 set_equipment_color:
@@ -428,11 +460,45 @@ puts:
         ret
 
 ; --------------------------------------------------------------------------
-; IBM PC BIOS 6845 parameters for 80x25 text
-crtc_cga:       db 71h, 50h, 5Ah, 0Ah, 1Fh, 06h, 19h, 1Ch
-                db 02h, 07h, 06h, 07h, 00h, 00h, 00h, 00h
-crtc_mda:       db 61h, 50h, 52h, 0Fh, 19h, 06h, 19h, 19h
-                db 02h, 0Dh, 0Bh, 0Ch, 00h, 00h, 00h, 00h
+; Timing records: misc output, clocking mode, CRTC base, character height,
+; pair count, then CRTC index (low byte) / value (high byte) pairs.
+; Overflow 1Fh carries bit 8 of every vertical value, 11h ends retrace and
+; keeps R0-R7 writable.
+; CGA: 28.322 MHz / 2, 114 characters, 262 lines -> 15.53 kHz / 59.3 Hz
+timing_cga:
+        db      27h, 09h
+        dw      3D4h
+        db      8, (timing_cga_end - $ - 2) / 2
+        db      00h, 114 - 5, 01h, 79, 02h, 80, 03h, 80h | (112 & 1Fh)
+        db      04h, 90, 05h, 80h | (100 & 1Fh), 13h, 40
+        db      06h, (262 - 2) & 0FFh, 07h, 11h, 08h, 00h, 09h, 47h
+        db      0Ah, 06h, 0Bh, 07h, 10h, 224, 12h, 199
+        db      15h, 200, 16h, 261 & 0FFh, 11h, 03h
+timing_cga_end:
+
+; EGA 350 lines: 25.175 MHz, 144 characters, 364 lines -> 21.85 kHz / 60.0 Hz
+timing_ega:
+        db      0A3h, 01h
+        dw      3D4h
+        db      14, (timing_ega_end - $ - 2) / 2
+        db      00h, 144 - 5, 01h, 79, 02h, 80, 03h, 80h | (140 & 1Fh)
+        db      04h, 96, 05h, (110 & 1Fh), 13h, 40
+        db      06h, (364 - 2) & 0FFh, 07h, 1Fh, 08h, 00h, 09h, 4Dh
+        db      0Ah, 0Bh, 0Bh, 0Ch, 10h, 352 & 0FFh, 12h, 349 & 0FFh
+        db      15h, 350 & 0FFh, 16h, (364 - 2) & 0FFh, 11h, 03h
+timing_ega_end:
+
+; MDA: 28.322 MHz / 2, 96 characters, 370 lines -> 18.44 kHz / 49.8 Hz
+timing_mda:
+        db      0A6h, 09h
+        dw      3B4h
+        db      14, (timing_mda_end - $ - 2) / 2
+        db      00h, 96 - 5, 01h, 79, 02h, 80, 03h, 80h | (94 & 1Fh)
+        db      04h, 83, 05h, (95 & 1Fh), 13h, 40
+        db      06h, (370 - 2) & 0FFh, 07h, 1Fh, 08h, 00h, 09h, 4Dh
+        db      0Ah, 0Bh, 0Bh, 0Ch, 10h, 352 & 0FFh, 12h, 349 & 0FFh
+        db      15h, 350 & 0FFh, 16h, (370 - 2) & 0FFh, 11h, 0Eh
+timing_mda_end:
 
 ; name (3 chars), emulation value, handler
 targets:        db 'VGA', EMU_VGA

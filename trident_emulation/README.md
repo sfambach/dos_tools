@@ -9,9 +9,9 @@ Small DOS tool that switches the emulation mode of a Trident TVGA8800/8900 graph
 ```
 TRIEMU            show chip ID, emulation and switch settings
 TRIEMU VGA        back to VGA, BIOS mode 3
-TRIEMU EGA        EGA emulation, BIOS mode 3
-TRIEMU CGA        CGA emulation, 80x25 text programmed like an IBM CGA
-TRIEMU MDA        MDA emulation, 80x25 text programmed like an IBM MDA
+TRIEMU EGA        EGA emulation, 80x25 text with EGA timing (21.8 kHz)
+TRIEMU CGA        CGA emulation, 80x25 text with CGA timing (15.5 kHz)
+TRIEMU MDA        MDA emulation, 80x25 text with MDA timing (18.4 kHz)
 TRIEMU HGC        same as MDA
 /F                skip the Trident check
 ```
@@ -26,31 +26,17 @@ On the card, also set the output to TTL (jumper/DIP switches per the card's manu
 | Switch emulation | 3C4h index 0Dh (old mode control 2), bits 0–2: 0 = VGA, 3 = EGA, 5 = CGA/MDA/Hercules |
 | Switch settings | 3C4h index 0Fh, bits 0–3 |
 
-For `CGA` and `MDA` the tool first sets the matching VGA BIOS mode (font, palette), clears the VGA CRTC write protect, switches the emulation, then writes the 6845 registers, the mode register (3D8h/3B8h) and the BIOS data area with the values of the original IBM BIOS:
+Version 0.1.0 wrote the IBM 6845 values into the CRTC. A test on a TVGA8800BR (2026-10-12) showed that this does not work: `TRIEMU CGA` gave 200 lines at 31 kHz / 117 Hz, and `TRIEMU EGA` stayed at 32.4 kHz / 72 Hz. Neither the emulation bits nor the 6845 values change the clock.
 
-| | 6845 R0–R11 | Mode reg. |
-|---|---|---|
-| CGA 80x25 | 71 50 5A 0A 1F 06 19 1C 02 07 06 07 | 29h, colour 30h |
-| MDA 80x25 | 61 50 52 0F 19 06 19 19 02 0D 0B 0C | 29h |
+Since 0.2.0 the tool sets the matching VGA BIOS mode, loads the font, switches the emulation bits and then builds the timing from standard VGA registers (misc output, sequencer clocking mode, CRTC), like [`CGA15`](../cga_timing/):
 
-Card BIOS (TG Expert EVGA, C3-127, from a disassembly, unverified): at POST it reads the switch nibble (3C4h index 0Fh). If it is `1100` and 3CCh reads 67h, the card hands INT 10h over to the mainboard BIOS (`int 42h`). `TRIEMU` without arguments shows this nibble as `Switches:`.
-
-TELLSET.EXE (Trident utility package VC415, 1993; disassembled, unverified) reads the emulation the same way TRIEMU does. It prints `Emulate:` only when old mode index 0Dh bits 0–2 are not zero. The name comes from new mode index 0Fh: 0 = VGA, 1 = EGA, 2 = CGA, 3 = HERC. `TRIEMU` shows this value as `New 0Fh:`.
-
-Open: whether the 8800BR in emulation mode 5 really takes over the 6845 values as 15.7 kHz / 18.4 kHz timing, and whether `EGA` changes the timing at all, is not known.
-
-Source: [vgadoc TRIDENT.TXT](https://pdos.csail.mit.edu/6.1810/2017/readings/hardware/vgadoc/TRIDENT.TXT)
-
-Emulation DIP switches of TVGA8800 boards (from [dosdays](https://www.dosdays.co.uk/topics/Manufacturers/trident/tvga8800.php)); jumper J1 1-2 selects a CGA/MDA monitor:
-
-| Emulation | SW1 | SW2 | SW3 | SW4 |
+| | Clock | Characters per line (8 dots) | Lines per frame | Result |
 |---|---|---|---|---|
-| VGA | On | On | On | On |
-| EGA | Off | On | On | On |
-| CGA | On | Off | On | On |
-| MDA / Hercules | Off | Off | On | On |
+| CGA | 28.322 MHz / 2 | 114, 80 visible | 262, 200 visible | 15.53 kHz / 59.3 Hz, +H +V |
+| EGA | 25.175 MHz | 144, 80 visible | 364, 350 visible | 21.85 kHz / 60.0 Hz, +H −V |
+| MDA | 28.322 MHz / 2 | 96, 80 visible | 370, 350 visible | 18.44 kHz / 49.8 Hz, +H −V |
 
-If SW1 is bit 0 and On reads as 1, the nibble `1100` is the MDA/Hercules position (inference, unverified). A cold boot with the switches set to CGA is the first hardware test to try before `TRIEMU`.
+Open: whether the 9-pin TTL output of the TG Expert EVGA carries this timing or only the analog VGA output does.
 
 ## Findings from SVM89.EXE
 
