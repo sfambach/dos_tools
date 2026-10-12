@@ -45,7 +45,7 @@ So since 0.3.0:
 
 Version 0.2.0 wrote VGA-style values in CGA and MDA emulation, which the 6845-like CRTC turned into no sync (CGA) or 34.2 kHz / 28.3 Hz (MDA).
 
-Open: whether the 9-pin TTL output of the TG Expert EVGA carries this timing or only the analog VGA output does.
+The 9-pin TTL output carries the CRTC timing (confirmed by the measurements above).
 
 ## Findings from SVM89.EXE
 
