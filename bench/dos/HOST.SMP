@@ -1,0 +1,7 @@
+REM Copy to C:\BENCH\HOST.BAT and fill in.
+REM HOST   name of this PC, 8 characters, used as folder on the server
+REM SETUP  record id of the PC configuration (test setup) in the Taxonomy Modeller
+REM NETDRV drive letter of the server share (EtherDFS), empty = no upload
+SET HOST=DOSBOX
+SET SETUP=0
+SET NETDRV=N:

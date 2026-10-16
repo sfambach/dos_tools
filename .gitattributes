@@ -1,0 +1,3 @@
+*.BAT text eol=crlf
+*.SMP text eol=crlf
+*.COM binary

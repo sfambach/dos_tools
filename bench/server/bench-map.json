@@ -1,0 +1,9 @@
+{
+ "measurement_node": "<Knoten Messwerte, per taxmod/read-tree>",
+ "quantities": {
+  "doom.fps": "<Messgröße Doom FPS>",
+  "quake.fps": "<Messgröße Quake 320x200 FPS>",
+  "topbench.score": "<Messgröße TOPBENCH Score>",
+  "speedsys.cpu": "<Messgröße Speedsys CPU>"
+ }
+}
