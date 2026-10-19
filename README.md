@@ -4,6 +4,7 @@ Sammlung kleiner DOS-Werkzeuge für IBM PC/XT/AT und Kompatible.
 
 | Werkzeug | Zweck |
 |---|---|
+| [lfndel](lfndel/) | Listet oder entfernt lange Dateinamen (VFAT-LFN-Einträge) auf FAT12/16 unter DOS 3.x |
 | [graphic_mode_tester](graphic_mode_tester/) | Schaltet alle Videomodi der Grafikkarte (MDA, CGA, EGA) durch und zeigt je ein statisches Testbild |
 
 ## Lizenz
